@@ -1,1 +1,852 @@
-.
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f5">
+  <title>Структура · Справочник сотрудников</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202923;
+      --muted: #78817a;
+      --line: #e9ece8;
+      --paper: #fff;
+      --canvas: #f6f7f5;
+      --green: #246b50;
+      --green-dark: #1c533e;
+      --green-light: #eaf3ed;
+      --serif: "Avenir Next", "Segoe UI", sans-serif;
+      --sans: "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .shell { max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 0 48px 52px; }
+    .topbar {
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--green);
+      color: #fff;
+    }
+    .brand-name { font-family: var(--serif); font-size: 15px; font-weight: 800; letter-spacing: -.045em; }
+    .brand-caption { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .sync-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--paper);
+      color: #4e5851;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: border-color .18s, background .18s;
+    }
+    .sync-button:hover { border-color: #cbd8ce; background: #fbfdfb; }
+    .sync-button:disabled { cursor: wait; opacity: .65; }
+    .page-heading { padding: 42px 0 29px; }
+    .eyebrow { color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    h1 {
+      margin: 9px 0 7px;
+      font-family: var(--serif);
+      font-size: clamp(29px, 3vw, 39px);
+      font-weight: 600;
+      letter-spacing: -.065em;
+      line-height: 1.2;
+    }
+    .subtitle { margin: 0; color: var(--muted); font-size: 14px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+    .panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--paper);
+      box-shadow: 0 5px 20px rgb(30 53 38 / 3%);
+    }
+    .directory { position: sticky; top: 18px; }
+    .directory-head { padding: 20px 19px 15px; }
+    .section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .section-title { margin: 0; font-family: var(--serif); font-size: 15px; font-weight: 700; letter-spacing: -.03em; }
+    .count-pill { padding: 4px 8px; border-radius: 20px; background: #f1f3f0; color: #69736b; font-size: 10px; font-weight: 700; }
+    .search-wrap { position: relative; margin-top: 16px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; color: #929a93; transform: translateY(-50%); pointer-events: none; }
+    .search {
+      width: 100%;
+      height: 41px;
+      padding: 0 34px 0 37px;
+      outline: none;
+      border: 1px solid #e7ebe6;
+      border-radius: 9px;
+      background: #fafbfa;
+      color: var(--ink);
+      font-size: 12px;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .search::placeholder { color: #a0a7a1; }
+    .search:focus { border-color: #9dbdab; box-shadow: 0 0 0 3px rgb(36 107 80 / 9%); }
+    .clear-search {
+      position: absolute;
+      top: 50%;
+      right: 9px;
+      display: none;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #778079;
+      cursor: pointer;
+      transform: translateY(-50%);
+    }
+    .clear-search.visible { display: grid; }
+    .directory-meta { padding: 0 19px 11px; color: #9aa19b; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .directory-list { max-height: min(600px, calc(100vh - 300px)); overflow: auto; padding: 0 9px 10px; }
+    .building { margin-bottom: 5px; }
+    .building-button, .department-button {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 9px;
+      border: 0;
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .building-button {
+      padding: 11px 10px;
+      background: #f4f7f4;
+    }
+    .building-button:hover { background: #edf3ee; }
+    .building-name { flex: 1; min-width: 0; color: #35483b; font-size: 11px; font-weight: 700; line-height: 1.45; }
+    .building-count { color: var(--green); font-size: 10px; font-weight: 700; }
+    .building.open .chevron, .department.open .chevron { transform: rotate(90deg); }
+    .department-list { display: none; padding: 4px 0 2px 9px; }
+    .building.open .department-list { display: grid; gap: 2px; }
+    .department { margin-bottom: 3px; }
+    .department-button { padding: 9px 9px; background: transparent; }
+    .department-button:hover { background: #f7f9f7; }
+    .chevron { flex: 0 0 auto; color: #9aa19b; transition: transform .18s; }
+    .department-name { flex: 1; min-width: 0; color: #465149; font-size: 11px; font-weight: 600; line-height: 1.45; }
+    .department-count { color: #9aa19b; font-size: 10px; }
+    .employee-list { display: none; padding: 1px 0 5px 21px; }
+    .department.open .employee-list { display: grid; gap: 2px; }
+    .employee-link {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 9px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #6a746c;
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: left;
+      cursor: pointer;
+    }
+    .employee-link:hover { background: #f5f8f5; color: var(--ink); }
+    .employee-link.selected { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
+    .person-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: #bdc7bf; }
+    .employee-link.selected .person-dot { background: var(--green); }
+    .employee-link-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .profile { min-height: 466px; }
+    .profile-top {
+      position: relative;
+      display: flex;
+      min-height: 220px;
+      align-items: center;
+      gap: 26px;
+      padding: 37px 40px;
+      background: linear-gradient(112deg, #f1f6f1 0%, #f8faf7 63%, #f5f6f1 100%);
+    }
+    .profile-top::after {
+      position: absolute;
+      right: 28px;
+      bottom: 0;
+      width: 160px;
+      height: 112px;
+      background: radial-gradient(ellipse at 75% 80%, rgb(96 142 111 / 9%), transparent 70%);
+      content: "";
+      pointer-events: none;
+    }
+    .avatar {
+      display: grid;
+      width: 96px;
+      height: 96px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 5px solid rgb(255 255 255 / 82%);
+      border-radius: 28px;
+      background: #dce9de;
+      color: #397352;
+      font-family: var(--serif);
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: -.08em;
+      box-shadow: 0 8px 22px rgb(42 81 55 / 9%);
+    }
+    .profile-intro { position: relative; z-index: 1; min-width: 0; }
+    .profile-label { margin-bottom: 9px; color: #75847a; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .person-name { margin: 0; font-family: var(--serif); font-size: clamp(23px, 2.7vw, 31px); font-weight: 600; letter-spacing: -.06em; line-height: 1.2; }
+    .person-role { max-width: 580px; margin: 8px 0 0; color: #69766d; font-size: 13px; line-height: 1.55; }
+    .profile-body { padding: 27px 40px 35px; }
+    .unit-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+      padding: 8px 11px;
+      border: 1px solid #e6ece6;
+      border-radius: 8px;
+      background: #fbfcfb;
+      color: #516158;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .info-heading { margin: 25px 0 15px; color: #9aa19b; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .info-item { display: flex; min-height: 76px; align-items: flex-start; gap: 11px; padding: 15px 14px; border: 1px solid #edf0ec; border-radius: 10px; }
+    .info-icon { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #f1f5f1; color: #58725f; }
+    .info-copy { min-width: 0; padding-top: 1px; }
+    .info-label { margin-bottom: 5px; color: #909991; font-size: 10px; }
+    .info-value { overflow-wrap: anywhere; color: #344139; font-size: 12px; font-weight: 600; line-height: 1.45; }
+    .info-value a { color: inherit; text-decoration: none; }
+    .info-value a:hover { color: var(--green); }
+    .additional-link {
+      margin-top: 20px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .additional-link:hover { color: var(--green-dark); text-decoration: underline; }
+    .login-dialog {
+      width: min(420px, calc(100% - 30px));
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 0 24px 80px rgb(25 43 31 / 24%);
+    }
+    .login-dialog::backdrop { background: rgb(21 31 25 / 42%); backdrop-filter: blur(3px); }
+    .login-dialog-content { padding: 25px; }
+    .login-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 21px; }
+    .login-dialog-title { margin: 0; font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: -.05em; }
+    .login-dialog-caption { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .dialog-close { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 8px; background: #f3f5f2; color: #69736b; cursor: pointer; }
+    .login-form { display: grid; gap: 13px; }
+    .login-form[hidden], #authenticated-panel[hidden] { display: none; }
+    .login-field { display: grid; gap: 6px; color: #59645c; font-size: 11px; font-weight: 600; }
+    .login-input { width: 100%; height: 42px; padding: 0 11px; border: 1px solid #e3e9e3; border-radius: 8px; outline: none; background: #fbfcfb; color: var(--ink); font-size: 13px; }
+    .login-input:focus { border-color: #9dbdab; box-shadow: 0 0 0 3px rgb(36 107 80 / 9%); }
+    .login-error { min-height: 16px; margin: 0; color: #a34435; font-size: 11px; line-height: 1.45; }
+    .login-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 2px; }
+    .dialog-button { min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #4e5851; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .dialog-button.primary { border-color: var(--green); background: var(--green); color: #fff; }
+    .dialog-button:disabled { cursor: wait; opacity: .65; }
+    .auth-state { padding: 12px; border-radius: 9px; background: #f1f6f1; color: #47614e; font-size: 12px; line-height: 1.5; }
+    .auth-state strong { font-weight: 700; }
+    .empty-state, .loading-state, .error-state { padding: 65px 24px; color: var(--muted); text-align: center; }
+    .state-icon { display: grid; width: 48px; height: 48px; margin: 0 auto 15px; place-items: center; border-radius: 15px; background: #f0f3ef; color: #76847a; }
+    .state-title { margin: 0 0 6px; color: #3b463e; font-family: var(--serif); font-size: 16px; font-weight: 700; }
+    .state-copy { margin: 0; font-size: 12px; line-height: 1.6; }
+    .error-state .state-icon { background: #fff1ee; color: #b35b4a; }
+    .error-state .state-title { color: #8e4336; }
+    .loading-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #6b9b78; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { to { opacity: .25; transform: scale(.7); } }
+    .footer { display: flex; justify-content: space-between; gap: 15px; padding: 17px 2px; color: #a0a7a1; font-size: 10px; }
+    @media (max-width: 820px) {
+      .shell { padding: 0 24px 35px; }
+      .workspace { grid-template-columns: minmax(230px, .8fr) minmax(0, 1.2fr); gap: 14px; }
+      .profile-top { gap: 18px; padding: 30px 25px; }
+      .avatar { width: 78px; height: 78px; border-radius: 23px; font-size: 23px; }
+      .profile-body { padding: 23px 25px 28px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .shell { padding: 0 15px 25px; }
+      .topbar { height: 69px; }
+      .brand-mark { width: 33px; height: 33px; }
+      .brand-caption { font-size: 10px; }
+      .sync-button { width: 37px; height: 37px; justify-content: center; padding: 0; font-size: 0; }
+      .sync-button svg { width: 17px; height: 17px; }
+      .page-heading { padding: 30px 0 22px; }
+      h1 { font-size: 30px; }
+      .subtitle { font-size: 12px; }
+      .workspace { grid-template-columns: 1fr; gap: 13px; }
+      .directory { position: static; }
+      .directory-head { padding: 16px 15px 12px; }
+      .directory-meta { padding: 0 15px 9px; }
+      .directory-list { max-height: 255px; }
+      .profile { min-height: 0; }
+      .profile-top { min-height: 176px; gap: 15px; padding: 24px 19px; }
+      .avatar { width: 68px; height: 68px; border-width: 4px; border-radius: 20px; font-size: 20px; }
+      .profile-label { margin-bottom: 6px; font-size: 9px; }
+      .person-name { font-size: clamp(21px, 6vw, 27px); }
+      .person-role { margin-top: 6px; font-size: 11px; }
+      .profile-body { padding: 19px 17px 23px; }
+      .info-heading { margin: 20px 0 11px; }
+      .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .info-item { min-height: 70px; gap: 8px; padding: 11px 9px; }
+      .info-icon { width: 27px; height: 27px; border-radius: 8px; }
+      .info-label { font-size: 9px; }
+      .info-value { font-size: 11px; }
+      .footer { font-size: 9px; }
+    }
+    @media (max-width: 380px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .profile-top { align-items: flex-start; }
+      .avatar { width: 58px; height: 58px; border-radius: 17px; font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3.5c-3.4 0-6.2 2.8-6.2 6.2 0 4.4 6.2 10.8 6.2 10.8s6.2-6.4 6.2-10.8c0-3.4-2.8-6.2-6.2-6.2Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="9.7" r="2.1" stroke="currentColor" stroke-width="1.7"/></svg>
+        </div>
+        <div><div class="brand-name">Медицинский справочник</div><div class="brand-caption">Структура и сотрудники</div></div>
+      </div>
+      <button class="sync-button" id="refresh-button" type="button" aria-label="Обновить данные из файла">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7v5h-5M4.6 9a7.5 7.5 0 0 1 12.8-2L20 12M4 17v-5h5m10.4 3a7.5 7.5 0 0 1-12.8 2L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Обновить
+      </button>
+    </header>
+
+    <main>
+      <section class="page-heading">
+        <div class="eyebrow">Единый справочник</div>
+        <h1>Структура организации</h1>
+        <p class="subtitle">Подразделения и сотрудники в одном месте</p>
+      </section>
+
+      <section class="workspace" aria-label="Справочник сотрудников">
+        <aside class="panel directory" aria-label="Навигация по структуре">
+          <div class="directory-head">
+            <div class="section-title-row">
+              <h2 class="section-title">Структура</h2>
+              <span class="count-pill" id="department-count">Загрузка</span>
+            </div>
+            <div class="search-wrap">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.7"/><path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <input class="search" id="search" type="search" placeholder="Имя, должность, подразделение…" autocomplete="off" aria-label="Поиск по сотрудникам и подразделениям">
+              <button class="clear-search" id="clear-search" type="button" aria-label="Очистить поиск">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="directory-meta" id="directory-meta">Подразделения</div>
+          <nav class="directory-list" id="directory-list" aria-label="Подразделения"></nav>
+        </aside>
+        <section class="panel profile" id="profile" aria-live="polite">
+          <div class="loading-state"><p class="state-copy"><span class="loading-dot"></span>Загружаем структуру организации…</p></div>
+        </section>
+      </section>
+    </main>
+    <footer class="footer"><span id="data-status">Подключение к структуре.xlsx</span><span>Внутренний справочник</span></footer>
+  </div>
+
+  <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
+    <div class="login-dialog-content">
+      <div class="login-dialog-header">
+        <div>
+          <h2 class="login-dialog-title" id="login-title">Логин</h2>
+          <p class="login-dialog-caption" id="login-caption">Войдите, чтобы посмотреть дополнительные сведения.</p>
+        </div>
+        <button class="dialog-close" id="close-login" type="button" aria-label="Закрыть окно">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="authenticated-panel" hidden>
+        <p class="auth-state">Вы вошли. Даты рождения доступны в карточках сотрудников.</p>
+        <div class="login-actions"><button class="dialog-button" id="logout-button" type="button">Выйти</button><button class="dialog-button primary" id="done-login" type="button">Готово</button></div>
+      </div>
+      <form class="login-form" id="login-form">
+        <label class="login-field">Логин<input class="login-input" name="username" type="text" autocomplete="username" required></label>
+        <label class="login-field">Пароль<input class="login-input" name="password" type="password" autocomplete="current-password" required></label>
+        <p class="login-error" id="login-error" aria-live="polite"></p>
+        <div class="login-actions"><button class="dialog-button" id="cancel-login" type="button">Отмена</button><button class="dialog-button primary" id="submit-login" type="submit">Войти</button></div>
+      </form>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      const searchInput = document.getElementById("search");
+      const clearButton = document.getElementById("clear-search");
+      const directory = document.getElementById("directory-list");
+      const profile = document.getElementById("profile");
+      const refreshButton = document.getElementById("refresh-button");
+      const departmentCount = document.getElementById("department-count");
+      const directoryMeta = document.getElementById("directory-meta");
+      const dataStatus = document.getElementById("data-status");
+      const loginDialog = document.getElementById("login-dialog");
+      const loginForm = document.getElementById("login-form");
+      const loginError = document.getElementById("login-error");
+      const loginCaption = document.getElementById("login-caption");
+      const authenticatedPanel = document.getElementById("authenticated-panel");
+      const submitLoginButton = document.getElementById("submit-login");
+      let employees = [];
+      let buildings = [];
+      let selectedId = null;
+      let openBuildings = new Set();
+      let openDepartments = new Set();
+      let searchTerm = "";
+      let authenticated = false;
+
+      const icons = {
+        phone: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7.2 3.8h2.5l1.2 4-1.8 1.5a14 14 0 0 0 5.6 5.6l1.5-1.8 4 1.2v2.5a2 2 0 0 1-2.2 2C10.2 18 6 13.8 5.2 6a2 2 0 0 1 2-2.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+        cake: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14v7H5zM4 12h16M8 9V6m4 3V4m4 5V6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 12v1m4-1v1m4-1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+        pin: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.2" stroke="currentColor" stroke-width="1.6"/></svg>',
+        room: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20M9 20v-5h6v5M9 8h.01M15 8h.01M9 11h.01M15 11h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        office: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v15M2 20h20M9 8h.01M15 8h.01M9 11h.01M15 11h.01M9 14h.01M15 14h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+        role: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 6V4h6v2M3 11h18m-11 0v2h4v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      };
+
+      function normalize(value) {
+        return String(value || "").toLocaleLowerCase("ru").replaceAll("ё", "е").trim();
+      }
+
+      function initials(name) {
+        return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toLocaleUpperCase("ru");
+      }
+
+      function escapeText(value) {
+        return String(value || "").replace(/[&<>"']/g, character => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[character]);
+      }
+
+      function makeInfo(label, value, icon, link) {
+        if (!value) return "";
+        const display = escapeText(value);
+        const content = link ? `<a href="${link}">${display}</a>` : display;
+        return `<div class="info-item"><div class="info-icon" aria-hidden="true">${icons[icon]}</div><div class="info-copy"><div class="info-label">${label}</div><div class="info-value">${content}</div></div></div>`;
+      }
+
+      function renderProfile(employee) {
+        if (!employee) {
+          profile.innerHTML = `<div class="empty-state"><div class="state-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"/><path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><h2 class="state-title">Ничего не найдено</h2><p class="state-copy">Попробуйте изменить запрос или выбрать сотрудника в структуре.</p></div>`;
+          return;
+        }
+
+        const identityDetails = [
+          makeInfo("Подразделение", employee.department, "office"),
+          makeInfo("Должность", employee.role, "role")
+        ].filter(Boolean).join("");
+        const details = [
+          makeInfo("Телефон", employee.phone, "phone", employee.phone ? `tel:${employee.phone.replace(/[^\d+]/g, "")}` : ""),
+          authenticated && makeInfo("Дата рождения", employee.birthDate, "cake"),
+          makeInfo("Корпус", employee.building, "pin"),
+          makeInfo("Этаж и кабинет", [employee.floor && `${employee.floor} этаж`, employee.room && `кабинет ${employee.room}`].filter(Boolean).join(" · "), "room")
+        ].filter(Boolean).join("");
+
+        profile.innerHTML = `
+          <div class="profile-top">
+            <div class="avatar" aria-hidden="true">${initials(employee.name)}</div>
+            <div class="profile-intro">
+              <div class="profile-label">Сотрудник организации</div>
+              <h2 class="person-name">${escapeText(employee.name) || "Без имени"}</h2>
+            </div>
+          </div>
+          <div class="profile-body">
+            ${identityDetails ? `<div class="info-heading">Основное</div><div class="info-grid">${identityDetails}</div>` : ""}
+            ${details ? `<div class="info-heading">Дополнительная информация</div><div class="info-grid">${details}</div>` : ""}
+            <button class="additional-link" id="additional-link" type="button">Дополнительно</button>
+          </div>`;
+      }
+
+      function parseXml(source, fileName) {
+        const document = new DOMParser().parseFromString(source, "application/xml");
+        if (document.getElementsByTagName("parsererror").length) {
+          throw new Error(`Не удалось прочитать ${fileName} в книге Excel.`);
+        }
+        return document;
+      }
+
+      async function readXlsxRows(buffer) {
+        const bytes = new Uint8Array(buffer);
+        const view = new DataView(buffer);
+        const decoder = new TextDecoder();
+        let endRecord = -1;
+        for (let offset = Math.max(0, bytes.length - 65557); offset <= bytes.length - 22; offset++) {
+          if (view.getUint32(offset, true) === 0x06054b50) endRecord = offset;
+        }
+        if (endRecord < 0) throw new Error("Файл не является корректной книгой Excel.");
+
+        const entryCount = view.getUint16(endRecord + 10, true);
+        let cursor = view.getUint32(endRecord + 16, true);
+        const entries = new Map();
+        for (let index = 0; index < entryCount; index++) {
+          if (view.getUint32(cursor, true) !== 0x02014b50) throw new Error("Повреждён каталог файлов книги Excel.");
+          const method = view.getUint16(cursor + 10, true);
+          const compressedSize = view.getUint32(cursor + 20, true);
+          const nameLength = view.getUint16(cursor + 28, true);
+          const extraLength = view.getUint16(cursor + 30, true);
+          const commentLength = view.getUint16(cursor + 32, true);
+          const localOffset = view.getUint32(cursor + 42, true);
+          const name = decoder.decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
+          entries.set(name, { method, compressedSize, localOffset });
+          cursor += 46 + nameLength + extraLength + commentLength;
+        }
+
+        async function readEntry(name) {
+          const entry = entries.get(name);
+          if (!entry) throw new Error(`В книге Excel отсутствует файл ${name}.`);
+          const local = entry.localOffset;
+          if (view.getUint32(local, true) !== 0x04034b50) throw new Error(`Повреждён файл ${name} в книге Excel.`);
+          const nameLength = view.getUint16(local + 26, true);
+          const extraLength = view.getUint16(local + 28, true);
+          const start = local + 30 + nameLength + extraLength;
+          const compressed = bytes.slice(start, start + entry.compressedSize);
+          if (entry.method === 0) return decoder.decode(compressed);
+          if (entry.method !== 8 || !("DecompressionStream" in window)) {
+            throw new Error("Браузер не поддерживает формат сжатия этой книги Excel.");
+          }
+          const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+          return decoder.decode(await new Response(stream).arrayBuffer());
+        }
+
+        const workbookXml = parseXml(await readEntry("xl/workbook.xml"), "workbook.xml");
+        const sheet = workbookXml.getElementsByTagNameNS("*", "sheet")[0];
+        if (!sheet) throw new Error("В книге Excel нет листов.");
+        const relationId = sheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+        const relationsXml = parseXml(await readEntry("xl/_rels/workbook.xml.rels"), "workbook.xml.rels");
+        const relation = Array.from(relationsXml.getElementsByTagNameNS("*", "Relationship"))
+          .find(item => item.getAttribute("Id") === relationId);
+        if (!relation) throw new Error("Не удалось определить файл первого листа книги Excel.");
+        const target = relation.getAttribute("Target");
+        const sheetPath = target.startsWith("/") ? target.slice(1) : target.startsWith("xl/") ? target : `xl/${target}`;
+        const worksheet = parseXml(await readEntry(sheetPath), sheetPath);
+
+        let sharedStrings = [];
+        if (entries.has("xl/sharedStrings.xml")) {
+          const stringsXml = parseXml(await readEntry("xl/sharedStrings.xml"), "sharedStrings.xml");
+          sharedStrings = Array.from(stringsXml.getElementsByTagNameNS("*", "si"), item =>
+            Array.from(item.getElementsByTagNameNS("*", "t"), text => text.textContent || "").join("")
+          );
+        }
+
+        const sheetData = worksheet.getElementsByTagNameNS("*", "sheetData")[0];
+        if (!sheetData) throw new Error("Первый лист книги Excel не содержит данных.");
+        return Array.from(sheetData.getElementsByTagNameNS("*", "row"), row => {
+          const values = [];
+          for (const cell of Array.from(row.children).filter(child => child.localName === "c")) {
+            const reference = cell.getAttribute("r") || "";
+            const letters = reference.match(/^[A-Z]+/i)?.[0] || "";
+            const column = Array.from(letters.toUpperCase()).reduce((number, letter) => number * 26 + letter.charCodeAt(0) - 64, 0) - 1;
+            const type = cell.getAttribute("t");
+            const valueNode = cell.getElementsByTagNameNS("*", type === "inlineStr" ? "t" : "v")[0];
+            let value = valueNode?.textContent || "";
+            if (type === "s" && value) value = sharedStrings[Number(value)] ?? "";
+            if (column >= 0) values[column] = value;
+          }
+          return values;
+        });
+      }
+
+      function filteredEmployees(department) {
+        if (!searchTerm || normalize(department.name).includes(searchTerm)) return department.employees;
+        return department.employees.filter(employee => employee.searchText.includes(searchTerm));
+      }
+
+      function renderDirectory() {
+        if (!buildings.length) return;
+        const shownBuildings = buildings.map(building => {
+          const buildingMatches = searchTerm && normalize(building.name).includes(searchTerm);
+          const shownDepartments = building.departments.map(department => ({
+            ...department,
+            visibleEmployees: buildingMatches ? department.employees : filteredEmployees(department)
+          })).filter(department => !searchTerm || department.visibleEmployees.length > 0);
+          return {
+            ...building,
+            visibleDepartments: shownDepartments,
+            visibleEmployees: shownDepartments.flatMap(department => department.visibleEmployees)
+          };
+        }).filter(building => !searchTerm || building.visibleEmployees.length > 0);
+        const visibleEmployeeCount = shownBuildings.reduce((sum, building) => sum + building.visibleEmployees.length, 0);
+        departmentCount.textContent = `${visibleEmployeeCount} сотр.`;
+        directoryMeta.textContent = searchTerm ? "Результаты поиска" : "Вся структура";
+
+        if (!shownBuildings.length) {
+          directory.innerHTML = `<div class="empty-state" style="padding:28px 12px"><p class="state-copy">По вашему запросу ничего не найдено</p></div>`;
+          return;
+        }
+
+        directory.innerHTML = shownBuildings.map(building => {
+          const buildingOpen = searchTerm ? true : openBuildings.has(building.name);
+          return `<div class="building${buildingOpen ? " open" : ""}" data-building="${encodeURIComponent(building.name)}">
+            <button class="building-button" type="button" aria-expanded="${buildingOpen}">
+              <svg class="chevron" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="building-name">${escapeText(building.name)}</span>
+              <span class="building-count">${building.visibleEmployees.length}</span>
+            </button>
+            <div class="department-list">${building.visibleDepartments.map(department => {
+              const departmentOpen = searchTerm ? true : openDepartments.has(department.key);
+              const visibleEmployees = department.visibleEmployees;
+              return `<div class="department${departmentOpen ? " open" : ""}" data-department="${encodeURIComponent(department.key)}">
+                <button class="department-button" type="button" aria-expanded="${departmentOpen}">
+                  <svg class="chevron" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="department-name">${escapeText(department.name)}</span>
+                  <span class="department-count">${visibleEmployees.length}</span>
+                </button>
+                <div class="employee-list">${visibleEmployees.map(employee => `<button class="employee-link${employee.id === selectedId ? " selected" : ""}" type="button" data-employee="${employee.id}"${employee.id === selectedId ? ' aria-current="true"' : ""}><span class="person-dot"></span><span class="employee-link-name">${escapeText(employee.name) || "Без имени"}</span></button>`).join("")}</div>
+              </div>`;
+            }).join("")}</div>
+          </div>`;
+        }).join("");
+
+        directory.querySelectorAll(".building-button").forEach(button => {
+          button.addEventListener("click", () => {
+            const row = button.closest(".building");
+            const name = decodeURIComponent(row.dataset.building);
+            if (openBuildings.has(name)) openBuildings.delete(name);
+            else openBuildings.add(name);
+            renderDirectory();
+          });
+        });
+        directory.querySelectorAll(".department-button").forEach(button => {
+          button.addEventListener("click", () => {
+            const row = button.closest(".department");
+            const key = decodeURIComponent(row.dataset.department);
+            if (openDepartments.has(key)) openDepartments.delete(key);
+            else openDepartments.add(key);
+            renderDirectory();
+          });
+        });
+        directory.querySelectorAll(".employee-link").forEach(button => {
+          button.addEventListener("click", () => {
+            selectedId = Number(button.dataset.employee);
+            renderProfile(employees.find(employee => employee.id === selectedId));
+            renderDirectory();
+          });
+        });
+      }
+
+      function showError(error) {
+        profile.innerHTML = `<div class="error-state"><div class="state-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3h.01M10.3 4.8 2.9 17.5A1.7 1.7 0 0 0 4.4 20h15.2a1.7 1.7 0 0 0 1.5-2.5L13.7 4.8a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h2 class="state-title">Не удалось загрузить структуру</h2><p class="state-copy">${escapeText(error.message)}<br>Проверьте, что файл <strong>structure.xlsx</strong> доступен рядом с приложением, и попробуйте обновить данные.</p></div>`;
+        dataStatus.textContent = "Ошибка загрузки";
+      }
+
+      async function loadWorkbook() {
+        refreshButton.disabled = true;
+        dataStatus.textContent = "Обновление данных…";
+        try {
+          const response = await fetch(`structure.xlsx?t=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`structure.xlsx недоступен (HTTP ${response.status}).`);
+          const rows = await readXlsxRows(await response.arrayBuffer());
+          if (rows.length < 2) throw new Error("В первом листе книги нет данных о сотрудниках.");
+
+          const headers = rows[0].map(value => normalize(value));
+          const columns = {
+            department: headers.indexOf(normalize("Подразделение")),
+            name: headers.indexOf(normalize("ФИО")),
+            role: headers.indexOf(normalize("Должность")),
+            birthDate: headers.indexOf(normalize("Дата рождения")),
+            phone: headers.indexOf(normalize("Телефон")),
+            building: headers.indexOf(normalize("Корпус")),
+            floor: headers.indexOf(normalize("Этаж")),
+            room: headers.indexOf(normalize("Кабинет"))
+          };
+          for (const [key, index] of Object.entries(columns)) {
+            if (index === -1 && ["department", "name", "role"].includes(key)) {
+              throw new Error(`В таблице не найдена обязательная колонка: ${key === "department" ? "Подразделение" : key === "name" ? "ФИО" : "Должность"}.`);
+            }
+          }
+
+          employees = rows.slice(1).map((row, index) => {
+            const get = key => String(row[columns[key]] || "").trim();
+            const employee = {
+              id: index + 1,
+              department: get("department"),
+              name: get("name"),
+              role: get("role"),
+              birthDate: get("birthDate"),
+              phone: get("phone"),
+              building: get("building"),
+              floor: get("floor"),
+              room: get("room")
+            };
+            employee.searchText = normalize([employee.name, employee.role, employee.department, employee.phone, employee.building, employee.floor, employee.room].join(" "));
+            return employee;
+          }).filter(employee => employee.name || employee.department || employee.role);
+
+          const byBuilding = new Map();
+          employees.forEach(employee => {
+            const buildingName = employee.building || "Корпус не указан";
+            const departmentName = employee.department || "Подразделение не указано";
+            if (!byBuilding.has(buildingName)) byBuilding.set(buildingName, new Map());
+            const departmentsByName = byBuilding.get(buildingName);
+            if (!departmentsByName.has(departmentName)) departmentsByName.set(departmentName, []);
+            departmentsByName.get(departmentName).push(employee);
+          });
+          buildings = Array.from(byBuilding, ([name, departmentsByName]) => ({
+            name,
+            departments: Array.from(departmentsByName, ([departmentName, members]) => ({
+              name: departmentName,
+              key: `${name}\u0000${departmentName}`,
+              employees: members
+            }))
+          }));
+          if (!employees.length) throw new Error("Не найдено ни одной строки с данными о сотрудниках.");
+
+          if (!employees.some(employee => employee.id === selectedId)) selectedId = employees[0].id;
+          if (!searchTerm) {
+            const selected = employees.find(employee => employee.id === selectedId);
+            const buildingName = selected.building || "Корпус не указан";
+            const departmentName = selected.department || "Подразделение не указано";
+            openBuildings = new Set([buildingName]);
+            openDepartments = new Set([`${buildingName}\u0000${departmentName}`]);
+          }
+          renderDirectory();
+          renderProfile(employees.find(employee => employee.id === selectedId));
+          dataStatus.textContent = `Обновлено ${new Intl.DateTimeFormat("ru", { hour: "2-digit", minute: "2-digit" }).format(new Date())}`;
+        } catch (error) {
+          console.error("Ошибка загрузки structure.xlsx:", error);
+          showError(error);
+        } finally {
+          refreshButton.disabled = false;
+        }
+      }
+
+      function showLoginDialog() {
+        loginError.textContent = "";
+        loginForm.reset();
+        loginForm.hidden = authenticated;
+        authenticatedPanel.hidden = !authenticated;
+        loginCaption.textContent = authenticated
+          ? "Доступ к дополнительным сведениям включён."
+          : "Войдите, чтобы посмотреть даты рождения сотрудников.";
+        loginDialog.showModal();
+      }
+
+      async function initialize() {
+        try {
+          const response = await fetch("/api/session", { cache: "no-store" });
+          if (!response.ok) throw new Error(`Не удалось проверить авторизацию (HTTP ${response.status}).`);
+          const session = await response.json();
+          authenticated = session.authenticated === true;
+          await loadWorkbook();
+        } catch (error) {
+          console.error("Ошибка проверки авторизации:", error);
+          showError(error);
+        }
+      }
+
+      searchInput.addEventListener("input", () => {
+        searchTerm = normalize(searchInput.value);
+        clearButton.classList.toggle("visible", Boolean(searchInput.value));
+        const selected = employees.find(employee => employee.id === selectedId);
+        if (searchTerm) {
+          const matchingEmployees = employees.filter(employee =>
+            employee.searchText.includes(searchTerm) || normalize(employee.department).includes(searchTerm)
+          );
+          if (!matchingEmployees.some(employee => employee.id === selectedId)) {
+            selectedId = matchingEmployees[0]?.id ?? null;
+          }
+        } else if (!selectedId && employees.length) {
+          selectedId = employees[0].id;
+        }
+        renderDirectory();
+        if (!selectedId && searchTerm) renderProfile(null);
+        else renderProfile(employees.find(employee => employee.id === selectedId));
+      });
+      clearButton.addEventListener("click", () => {
+        searchInput.value = "";
+        searchInput.dispatchEvent(new Event("input"));
+        searchInput.focus();
+      });
+      refreshButton.addEventListener("click", loadWorkbook);
+      profile.addEventListener("click", event => {
+        if (event.target.closest("#additional-link")) showLoginDialog();
+      });
+      document.getElementById("close-login").addEventListener("click", () => loginDialog.close());
+      document.getElementById("cancel-login").addEventListener("click", () => loginDialog.close());
+      document.getElementById("done-login").addEventListener("click", () => loginDialog.close());
+      loginDialog.addEventListener("click", event => {
+        if (event.target === loginDialog) loginDialog.close();
+      });
+      loginForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        loginError.textContent = "";
+        submitLoginButton.disabled = true;
+        try {
+          const formData = new FormData(loginForm);
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: formData.get("username"),
+              password: formData.get("password")
+            })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Не удалось войти.");
+          authenticated = true;
+          loginForm.reset();
+          loginDialog.close();
+          await loadWorkbook();
+        } catch (error) {
+          loginError.textContent = error.message;
+        } finally {
+          submitLoginButton.disabled = false;
+        }
+      });
+      document.getElementById("logout-button").addEventListener("click", async () => {
+        try {
+          const response = await fetch("/api/logout", { method: "POST" });
+          if (!response.ok) throw new Error(`Не удалось завершить сеанс (HTTP ${response.status}).`);
+          authenticated = false;
+          loginDialog.close();
+          await loadWorkbook();
+        } catch (error) {
+          loginError.textContent = error.message;
+        }
+      });
+
+      initialize();
+    })();
+  </script>
+</body>
+</html>

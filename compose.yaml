@@ -1,0 +1,8 @@
+services:
+  phones-directory:
+    build: .
+    image: phones-directory:latest
+    container_name: phones-directory
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${PORT:-8088}:8080"
