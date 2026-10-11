@@ -471,16 +471,16 @@
           return;
         }
 
-        const identityDetails = [
+        const mainDetails = [
           makeInfo("Подразделение", employee.department, "office"),
-          makeInfo("Должность", employee.role, "role")
-        ].filter(Boolean).join("");
-        const details = [
-          makeInfo("Телефон", employee.phone, "phone", employee.phone ? `tel:${employee.phone.replace(/[^\d+]/g, "")}` : ""),
-          authenticated && makeInfo("Дата рождения", employee.birthDate, "cake"),
+          makeInfo("Должность", employee.role, "role"),
           makeInfo("Корпус", employee.building, "pin"),
           makeInfo("Этаж и кабинет", [employee.floor && `${employee.floor} этаж`, employee.room && `кабинет ${employee.room}`].filter(Boolean).join(" · "), "room")
         ].filter(Boolean).join("");
+        const additionalDetails = authenticated ? [
+          makeInfo("Телефон", employee.phone, "phone", employee.phone ? `tel:${employee.phone.replace(/[^\d+]/g, "")}` : ""),
+          makeInfo("Дата рождения", employee.birthDate, "cake")
+        ].filter(Boolean).join("") : "";
 
         profile.innerHTML = `
           <div class="profile-top">
@@ -491,8 +491,8 @@
             </div>
           </div>
           <div class="profile-body">
-            ${identityDetails ? `<div class="info-heading">Основное</div><div class="info-grid">${identityDetails}</div>` : ""}
-            ${details ? `<div class="info-heading">Дополнительная информация</div><div class="info-grid">${details}</div>` : ""}
+            ${mainDetails ? `<div class="info-heading">Основное</div><div class="info-grid">${mainDetails}</div>` : ""}
+            ${additionalDetails ? `<div class="info-heading">Дополнительная информация</div><div class="info-grid">${additionalDetails}</div>` : ""}
             <button class="additional-link" id="additional-link" type="button">Дополнительно</button>
           </div>`;
       }

@@ -8,7 +8,7 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-PORT="${PORT:-8088}"
+PORT="${PORT:-8090}"
 case "$PORT" in
   ""|*[!0-9]*)
     echo "PORT должен быть числом от 1 до 65535." >&2

@@ -46,7 +46,7 @@ def make_private_workbook(source):
         sheet_xml = ET.fromstring(original.read("xl/worksheets/sheet1.xml"))
         for row in sheet_xml.iter(f"{{{XML_NS}}}row"):
             for cell in row:
-                if cell.tag == f"{{{XML_NS}}}c" and re.fullmatch(r"F\d+", cell.get("r", "")) and cell.get("t") == "s":
+                if cell.tag == f"{{{XML_NS}}}c" and re.fullmatch(r"[FG]\d+", cell.get("r", "")) and cell.get("t") == "s":
                     value = cell.find(f"{{{XML_NS}}}v")
                     if value is not None and value.text is not None:
                         shared_indices_to_redact.add(int(value.text))
@@ -56,7 +56,7 @@ def make_private_workbook(source):
             if item.filename == "xl/worksheets/sheet1.xml":
                 for row in sheet_xml.iter(f"{{{XML_NS}}}row"):
                     for cell in list(row):
-                        if cell.tag == f"{{{XML_NS}}}c" and re.fullmatch(r"F\d+", cell.get("r", "")):
+                        if cell.tag == f"{{{XML_NS}}}c" and re.fullmatch(r"[FG]\d+", cell.get("r", "")):
                             row.remove(cell)
                 contents = ET.tostring(sheet_xml, encoding="utf-8", xml_declaration=True)
             elif item.filename == "xl/sharedStrings.xml" and shared_indices_to_redact:
