@@ -20,6 +20,11 @@ foreach ($fileName in @("pass.txt", "structure.xlsx")) {
 
 Push-Location $projectDirectory
 try {
+    $dataDirectory = Join-Path $projectDirectory "data"
+    if (-not (Test-Path -LiteralPath $dataDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $dataDirectory | Out-Null
+    }
+
     & $docker.Source info *> $null
     if ($LASTEXITCODE -ne 0) {
         throw "Docker Desktop не запущен или Docker Engine недоступен. Запустите Docker Desktop и повторите попытку."

@@ -219,6 +219,22 @@
     .profile-label { margin-bottom: 9px; color: #75847a; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
     .person-name { margin: 0; font-family: var(--serif); font-size: clamp(23px, 2.7vw, 31px); font-weight: 600; letter-spacing: -.06em; line-height: 1.2; }
     .person-role { max-width: 580px; margin: 8px 0 0; color: #69766d; font-size: 13px; line-height: 1.55; }
+    .profile-edit-button {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      margin-left: auto;
+      place-items: center;
+      border: 1px solid #dbe6dc;
+      border-radius: 10px;
+      background: rgb(255 255 255 / 78%);
+      color: var(--green);
+      cursor: pointer;
+    }
+    .profile-edit-button:hover { border-color: #a9c2af; background: #fff; }
     .profile-body { padding: 27px 40px 35px; }
     .unit-chip {
       display: inline-flex;
@@ -243,6 +259,13 @@
     .info-value { overflow-wrap: anywhere; color: #344139; font-size: 12px; font-weight: 600; line-height: 1.45; }
     .info-value a { color: inherit; text-decoration: none; }
     .info-value a:hover { color: var(--green); }
+    .edit-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .edit-field { display: grid; min-width: 0; gap: 6px; color: #68736a; font-size: 10px; font-weight: 700; }
+    .edit-input { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid #e3e9e3; border-radius: 8px; outline: none; background: #fbfcfb; color: var(--ink); font-size: 12px; font-weight: 500; }
+    .edit-input:focus { border-color: #9dbdab; box-shadow: 0 0 0 3px rgb(36 107 80 / 9%); }
+    .edit-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+    .edit-error, .save-warning { min-height: 16px; margin: 13px 0 0; color: #a34435; font-size: 11px; line-height: 1.45; }
+    .edit-actions .dialog-button:disabled { cursor: wait; opacity: .65; }
     .additional-link {
       margin-top: 20px;
       padding: 0;
@@ -322,6 +345,7 @@
       .profile-body { padding: 19px 17px 23px; }
       .info-heading { margin: 20px 0 11px; }
       .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .edit-fields { grid-template-columns: 1fr; gap: 10px; }
       .info-item { min-height: 70px; gap: 8px; padding: 11px 9px; }
       .info-icon { width: 27px; height: 27px; border-radius: 8px; }
       .info-label { font-size: 9px; }
@@ -430,6 +454,8 @@
       let openDepartments = new Set();
       let searchTerm = "";
       let authenticated = false;
+      let isAdmin = false;
+      let editingProfile = false;
 
       const icons = {
         phone: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7.2 3.8h2.5l1.2 4-1.8 1.5a14 14 0 0 0 5.6 5.6l1.5-1.8 4 1.2v2.5a2 2 0 0 1-2.2 2C10.2 18 6 13.8 5.2 6a2 2 0 0 1 2-2.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
@@ -467,10 +493,12 @@
 
       function renderProfile(employee) {
         if (!employee) {
+          editingProfile = false;
           profile.innerHTML = `<div class="empty-state"><div class="state-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"/><path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><h2 class="state-title">Ничего не найдено</h2><p class="state-copy">Попробуйте изменить запрос или выбрать сотрудника в структуре.</p></div>`;
           return;
         }
 
+        if (!isAdmin) editingProfile = false;
         const mainDetails = [
           makeInfo("Подразделение", employee.department, "office"),
           makeInfo("Должность", employee.role, "role"),
@@ -481,6 +509,9 @@
           makeInfo("Телефон", employee.phone, "phone", employee.phone ? `tel:${employee.phone.replace(/[^\d+]/g, "")}` : ""),
           makeInfo("Дата рождения", employee.birthDate, "cake")
         ].filter(Boolean).join("") : "";
+        const editFields = employee.fields.map(field =>
+          `<label class="edit-field"><span>${escapeText(field.label)}</span><input class="edit-input" type="text" name="field-${field.index}" data-column="${field.index}" value="${escapeText(field.value)}"></label>`
+        ).join("");
 
         profile.innerHTML = `
           <div class="profile-top">
@@ -489,11 +520,24 @@
               <div class="profile-label">Сотрудник организации</div>
               <h2 class="person-name">${escapeText(employee.name) || "Без имени"}</h2>
             </div>
+            ${isAdmin && !editingProfile ? `<button class="profile-edit-button" id="edit-profile" type="button" aria-label="Редактировать карточку" title="Редактировать карточку">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>` : ""}
           </div>
           <div class="profile-body">
-            ${mainDetails ? `<div class="info-heading">Основное</div><div class="info-grid">${mainDetails}</div>` : ""}
-            ${additionalDetails ? `<div class="info-heading">Дополнительная информация</div><div class="info-grid">${additionalDetails}</div>` : ""}
-            <button class="additional-link" id="additional-link" type="button">Дополнительно</button>
+            ${editingProfile ? `<form id="patient-edit-form">
+              <div class="info-heading">Редактирование карточки</div>
+              <div class="edit-fields">${editFields}</div>
+              <p class="edit-error" id="edit-error" aria-live="polite"></p>
+              <div class="edit-actions">
+                <button class="dialog-button" id="cancel-edit" type="button">Отмена</button>
+                <button class="dialog-button primary" id="save-edit" type="submit">Сохранить</button>
+              </div>
+            </form>` : `
+              ${mainDetails ? `<div class="info-heading">Основное</div><div class="info-grid">${mainDetails}</div>` : ""}
+              ${additionalDetails ? `<div class="info-heading">Дополнительная информация</div><div class="info-grid">${additionalDetails}</div>` : ""}
+              <button class="additional-link" id="additional-link" type="button">Дополнительно</button>
+            `}
           </div>`;
       }
 
@@ -582,6 +626,7 @@
             if (type === "s" && value) value = sharedStrings[Number(value)] ?? "";
             if (column >= 0) values[column] = value;
           }
+          values.rowNumber = Number(row.getAttribute("r"));
           return values;
         });
       }
@@ -696,9 +741,9 @@
           }
 
           employees = rows.slice(1).map((row, index) => {
-            const get = key => String(row[columns[key]] || "").trim();
+            const get = key => columns[key] < 0 ? "" : String(row[columns[key]] ?? "").trim();
             const employee = {
-              id: index + 1,
+              id: row.rowNumber || index + 2,
               department: get("department"),
               name: get("name"),
               role: get("role"),
@@ -706,9 +751,14 @@
               phone: get("phone"),
               building: get("building"),
               floor: get("floor"),
-              room: get("room")
+              room: get("room"),
+              fields: rows[0].map((header, column) => ({
+                index: column,
+                label: String(header ?? "").trim(),
+                value: String(row[column] ?? "").trim()
+              })).filter(field => field.label)
             };
-            employee.searchText = normalize([employee.name, employee.role, employee.department, employee.phone, employee.building, employee.floor, employee.room].join(" "));
+            employee.searchText = normalize(employee.fields.map(field => field.value).join(" "));
             return employee;
           }).filter(employee => employee.name || employee.department || employee.role);
 
@@ -756,8 +806,11 @@
         loginForm.hidden = authenticated;
         authenticatedPanel.hidden = !authenticated;
         loginCaption.textContent = authenticated
-          ? "Доступ к дополнительным сведениям включён."
+          ? isAdmin ? "Вы вошли как администратор. Можно редактировать карточки сотрудников." : "Доступ к дополнительным сведениям включён."
           : "Войдите, чтобы посмотреть даты рождения сотрудников.";
+        authenticatedPanel.querySelector(".auth-state").textContent = isAdmin
+          ? "Вы вошли как admin. В карточках сотрудников доступно редактирование."
+          : "Вы вошли. Даты рождения доступны в карточках сотрудников.";
         loginDialog.showModal();
       }
 
@@ -767,6 +820,7 @@
           if (!response.ok) throw new Error(`Не удалось проверить авторизацию (HTTP ${response.status}).`);
           const session = await response.json();
           authenticated = session.authenticated === true;
+          isAdmin = session.admin === true;
           await loadWorkbook();
         } catch (error) {
           console.error("Ошибка проверки авторизации:", error);
@@ -800,6 +854,68 @@
       refreshButton.addEventListener("click", loadWorkbook);
       profile.addEventListener("click", event => {
         if (event.target.closest("#additional-link")) showLoginDialog();
+        if (event.target.closest("#edit-profile")) {
+          editingProfile = true;
+          renderProfile(employees.find(employee => employee.id === selectedId));
+        }
+        if (event.target.closest("#cancel-edit")) {
+          editingProfile = false;
+          renderProfile(employees.find(employee => employee.id === selectedId));
+        }
+      });
+      profile.addEventListener("submit", async event => {
+        if (event.target.id !== "patient-edit-form") return;
+        event.preventDefault();
+        const employee = employees.find(item => item.id === selectedId);
+        if (!employee || !isAdmin) return;
+        const changes = {};
+        profile.querySelectorAll("[data-column]").forEach(input => {
+          const index = Number(input.dataset.column);
+          const original = employee.fields.find(field => field.index === index);
+          if (original && input.value !== original.value) changes[index] = input.value;
+        });
+        if (!Object.keys(changes).length) {
+          editingProfile = false;
+          renderProfile(employee);
+          return;
+        }
+
+        const saveButton = document.getElementById("save-edit");
+        const errorMessage = document.getElementById("edit-error");
+        saveButton.disabled = true;
+        profile.querySelectorAll("#patient-edit-form input, #cancel-edit").forEach(control => {
+          control.disabled = true;
+        });
+        errorMessage.textContent = "";
+        try {
+          const response = await fetch("/api/employee", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ row: employee.id, changes })
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            if (result.saved) {
+              editingProfile = false;
+              await loadWorkbook();
+              const warning = document.createElement("p");
+              warning.className = "save-warning";
+              warning.setAttribute("role", "alert");
+              warning.textContent = result.error || "Книга сохранена, но журнал изменений недоступен.";
+              profile.querySelector(".profile-body")?.append(warning);
+              return;
+            }
+            throw new Error(result.error || "Не удалось сохранить изменения.");
+          }
+          editingProfile = false;
+          await loadWorkbook();
+        } catch (error) {
+          errorMessage.textContent = error.message;
+          saveButton.disabled = false;
+          profile.querySelectorAll("#patient-edit-form input, #cancel-edit").forEach(control => {
+            control.disabled = false;
+          });
+        }
       });
       document.getElementById("close-login").addEventListener("click", () => loginDialog.close());
       document.getElementById("cancel-login").addEventListener("click", () => loginDialog.close());
@@ -824,6 +940,7 @@
           const result = await response.json();
           if (!response.ok) throw new Error(result.error || "Не удалось войти.");
           authenticated = true;
+          isAdmin = result.admin === true;
           loginForm.reset();
           loginDialog.close();
           await loadWorkbook();
@@ -838,6 +955,8 @@
           const response = await fetch("/api/logout", { method: "POST" });
           if (!response.ok) throw new Error(`Не удалось завершить сеанс (HTTP ${response.status}).`);
           authenticated = false;
+          isAdmin = false;
+          editingProfile = false;
           loginDialog.close();
           await loadWorkbook();
         } catch (error) {

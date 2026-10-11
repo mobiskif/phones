@@ -6,3 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "0.0.0.0:${PORT:-8090}:8080"
+    environment:
+      WORKBOOK_PATH: /var/lib/phones/structure.xlsx
+      CHANGES_LOG_PATH: /var/lib/phones/data/changes.log
+    volumes:
+      - ./:/var/lib/phones
