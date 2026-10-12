@@ -3,7 +3,7 @@
 ```mermaid
 flowchart TB
     subgraph deploy["Развёртывание"]
-        deployScript["deploy.sh / deploy.ps1"]
+        deployScript["deploy.sh / deploy.ps1 / deploy.bat"]
         compose["Docker Compose<br/>порт хоста 8090 (настраивается)"]
         container["Контейнер phones-directory<br/>Python 3.13 / порт 8080"]
         image["Docker image"]
@@ -65,13 +65,14 @@ flowchart TB
 
 1. Запустите Docker Desktop и убедитесь, что Docker Engine доступен.
 2. Создайте `pass.txt` в папке проекта: каждая строка должна содержать логин и пароль, разделённые пробелом.
-3. Откройте PowerShell в папке проекта и выполните:
+3. Запустите `deploy.bat` двойным щелчком или из командной строки в папке проекта:
 
-   ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy.ps1
+```bat
+deploy.bat
    ```
 
-   Чтобы использовать другой порт хоста, например `8088`, добавьте `-Port 8088`.
+Чтобы использовать другой порт хоста, например `8088`, выполните `deploy.bat 8088`.
+Скрипт вызывает `deploy.ps1`, собирает образ и запускает контейнер через Docker Compose.
 4. Откройте выведенный скриптом адрес. Для доступа с других устройств может понадобиться разрешить входящие подключения на выбранный порт в брандмауэре Windows.
 
 ## Ограничения текущей архитектуры
